@@ -4,9 +4,8 @@
 #include <libpsio/psio.hpp>
 using namespace psi;
 
-std::vector<double> calculate_esp_at_points(std::vector<Vector3> points) {
-    boost::shared_ptr<Wavefunction> wfn = Process::environment.wavefunction();
-    boost::shared_ptr<BasisSet> basisset = wfn->basisset();
+std::vector<double> calculate_esp_at_points(SharedWavefunction& ref_wfn, std::vector<Vector3> points) {
+    boost::shared_ptr<BasisSet> basisset = ref_wfn->basisset();
     boost::shared_ptr<Molecule> mol = basisset->molecule();
     boost::shared_ptr<IntegralFactory> integral_ = boost::shared_ptr<IntegralFactory>(new IntegralFactory(basisset, basisset, basisset, basisset));
     boost::shared_ptr<ElectrostaticInt> epot(dynamic_cast<ElectrostaticInt*>(integral_->electrostatic()));
@@ -17,7 +16,7 @@ std::vector<double> calculate_esp_at_points(std::vector<Vector3> points) {
     std::vector<double> esp_values;
 
     SharedMatrix Dtot = oeprop->Da_ao();
-    if (wfn->same_a_b_dens()) {
+    if (ref_wfn->same_a_b_dens()) {
         Dtot->scale(2.0);
     } else {
         Dtot->add(oeprop->Db_ao());

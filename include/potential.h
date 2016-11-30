@@ -10,6 +10,6 @@
 #include <libpsio/psio.hpp>
 #include <nlopt.hpp>
 
-std::vector<double> calculate_esp_at_points(std::vector<Vector3> points);
+std::vector<double> calculate_esp_at_points(SharedWavefunction& ref_wfn, std::vector<Vector3> points);
 
 #endif

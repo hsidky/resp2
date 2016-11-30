@@ -54,17 +54,16 @@ int read_options(std::string name, Options& options)
 
 
 extern "C"
-PsiReturnType resp2(Options& options) {
-    boost::shared_ptr<Wavefunction> wfn = Process::environment.wavefunction();
-    if (!wfn) {
+SharedWavefunction resp2(SharedWavefunction ref_wfn, Options& options) {
+    if (!ref_wfn) {
         outfile->Printf("\n ---------------------------------------------------\n");
         outfile->Printf(" You must first compute the wavefunction (scf) before\n");
         outfile->Printf(" running the resp plugin\n");
         outfile->Printf(" ---------------------------------------------------\n");
-            return Failure;
+            return ref_wfn;
     }
 
-    boost::shared_ptr<Molecule> mol = wfn->basisset()->molecule();
+    boost::shared_ptr<Molecule> mol = ref_wfn->basisset()->molecule();
     int n_atoms = mol->natom();
 
     // Make sure that the charge groups are reasonable
@@ -101,7 +100,7 @@ PsiReturnType resp2(Options& options) {
     for (size_t i = 0; i < points.size(); i++)
         points[i] = points[i] / BOHR_TO_ANGSTROMS;
     // And then calculate the ESP values there
-    std::vector<double> esp_values = calculate_esp_at_points(points);
+    std::vector<double> esp_values = calculate_esp_at_points(ref_wfn, points);
 
     // Build a matrix of the inverse distance from each ESP point to each nucleus
     ublas::matrix<double> invr (points.size(), n_atoms);
@@ -154,7 +153,7 @@ PsiReturnType resp2(Options& options) {
         outfile->Printf("   %5d    %2s     %8.5f\n", i+1, symbols[i].c_str(), charges[i]);
     outfile->Printf(" ----------------------------------------------\n");
 
-    return Success;
+    return ref_wfn;
 }
 
 }} // End namespaces
