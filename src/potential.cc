@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <liboptions/liboptions.h>
 #include <libmints/mints.h>
+#include <libmints/oeprop.h>
 #include <libpsio/psio.hpp>
 using namespace psi;
 
@@ -9,7 +10,7 @@ std::vector<double> calculate_esp_at_points(SharedWavefunction& ref_wfn, std::ve
     boost::shared_ptr<Molecule> mol = basisset->molecule();
     boost::shared_ptr<IntegralFactory> integral_ = boost::shared_ptr<IntegralFactory>(new IntegralFactory(basisset, basisset, basisset, basisset));
     boost::shared_ptr<ElectrostaticInt> epot(dynamic_cast<ElectrostaticInt*>(integral_->electrostatic()));
-    boost::shared_ptr<OEProp> oeprop = boost::shared_ptr<OEProp>(new OEProp());
+    boost::shared_ptr<OEProp> oeprop = boost::shared_ptr<OEProp>(new OEProp(ref_wfn));
 
     int n_atoms = mol->natom();
     int nbf = basisset->nbf();
