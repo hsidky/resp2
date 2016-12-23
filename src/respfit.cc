@@ -84,8 +84,6 @@ double resp_constraint(const std::vector<double> &charges, std::vector<double> &
         for(size_t i = 0; i < data->coordinates.size(); ++i)
             dipole += (data->coordinates[i] - data->com)*charges[i]/BOHR_TO_ANGSTROMS;
 
-        printf("Dipole: %f %f %f\n", dipole[0], dipole[1], dipole[2]);
-
         error += (dipole-data->dipole).norm();
     }
 
