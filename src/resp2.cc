@@ -16,7 +16,6 @@
 #include "respfit.h"
 #include "gitversion.hpp"
 
-#define BOHR_TO_ANGSTROMS 0.52917721092
 #define CONSTRAINT_TOLERANCE 1e-8
 #define CHARGE_TOLERANCE 1e-8
 
@@ -42,7 +41,8 @@ int read_options(std::string name, Options& options)
         options.add_double("RESP_A", 0.005);
         options.add_double("RESP_B", 0.001);
         options.add_array("CHARGE_GROUPS");
-
+        options.add_array("DISABLED_ATOMS");
+        options.add_array("DIPOLE");
     }
 
     return true;
@@ -66,6 +66,11 @@ SharedWavefunction resp2(SharedWavefunction ref_wfn, Options& options) {
     boost::shared_ptr<Molecule> mol = ref_wfn->basisset()->molecule();
     int n_atoms = mol->natom();
 
+    // Load molecular geometry. 
+    std::vector<std::array<double, 3>> geometry;
+    for(int i = 0; i < n_atoms; ++i)
+        geometry.push_back({mol->x(i), mol->y(i), mol->z(i)});
+
     // Make sure that the charge groups are reasonable
     std::vector<int> charge_groups = options.get_int_vector("CHARGE_GROUPS");
     if (charge_groups.size() == 0) {
@@ -78,6 +83,26 @@ SharedWavefunction resp2(SharedWavefunction ref_wfn, Options& options) {
         exit(1);
     }
 
+    // Load in disabled atoms.
+    std::vector<int> disabled_atoms = options.get_int_vector("DISABLED_ATOMS");
+    if(disabled_atoms.size() == 0)
+    {
+        outfile->Printf("RESP: No diabled atoms specified. Every atomic charge will be optimized\n");
+        for(int i = 0; i < n_atoms; ++i)
+            disabled_atoms.push_back(0);
+    }
+    else if(disabled_atoms.size() != n_atoms)
+    {
+        outfile->Printf("RESP: FATAL ERROR\n");
+        outfile->Printf("DISABLED_ATOMS must be a list of integers (0,1)");
+        exit(1);
+    }
+
+    // Load in dipole constraint.
+    Vector3 dipole;
+    if(options.exists("DIPOLE"))
+        dipole = options.get_double_array("DIPOLE");
+    
     // Get the coordinates of the nuclei in Angstroms
     double point_density = options.get_double("VDW_POINT_DENSITY");
     std::vector<std::string> symbols;
@@ -116,6 +141,11 @@ SharedWavefunction resp2(SharedWavefunction ref_wfn, Options& options) {
     data.resp_a = options.get_double("RESP_A");
     data.resp_b = options.get_double("RESP_B");
     data.charge_groups = charge_groups;
+    data.disabled_atoms = disabled_atoms;
+    data.coordinates = coordinates;
+    data.com = mol->center_of_mass() * BOHR_TO_ANGSTROMS;
+    data.dipole_enabled = options.exists("DIPOLE");
+    data.dipole = dipole;
     data.n_iterations = 0;
     
     opt.set_min_objective(resp_objective, &data);

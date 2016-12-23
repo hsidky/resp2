@@ -37,7 +37,7 @@ double resp_objective(const std::vector<double> &std_charges, std::vector<double
     for (size_t i = 0; i < charges.size(); i++)
         chi2_rstr += a * sqrt(charges[i]*charges[i] + b*b) - b;
 
-    // printf("Objective %f\n", chi2_esp + chi2_rstr);
+    printf("Objective: %f\n", chi2_esp + chi2_rstr);
     return chi2_esp + chi2_rstr;
 }
 
@@ -69,6 +69,26 @@ double resp_constraint(const std::vector<double> &charges, std::vector<double> &
             error += diff*diff;
         }
     }
+
+    // Penalize disabled charges. 
+    for(size_t i = 0; i < data->disabled_atoms.size(); ++i)
+    {
+        if(data->disabled_atoms[i])
+            error += charges[i]*charges[i];
+    }
+
+    // If dipole constraint is specified, compute dipole.
+    if(data->dipole_enabled)
+    {
+        psi::Vector3 dipole{0,0,0};
+        for(size_t i = 0; i < data->coordinates.size(); ++i)
+            dipole += (data->coordinates[i] - data->com)*charges[i]/BOHR_TO_ANGSTROMS;
+
+        printf("Dipole: %f %f %f\n", dipole[0], dipole[1], dipole[2]);
+
+        error += (dipole-data->dipole).norm();
+    }
+
     return error;
 }
 
